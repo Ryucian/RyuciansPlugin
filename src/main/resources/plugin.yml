@@ -1,7 +1,7 @@
-name: "RyucianPlugin"
-version: "${project.version}"
-main: "com.spigot.Ryucian.RyucianPlugin.RyucianPlugin"
-api-version: "1.16"
+name: RyucianPlugin
+version: ${project.version}
+main: com.spigot.Ryucian.RyucianPlugin.RyucianPlugin
+api-version: 1.16
 commands:
    SummonPero:
       description: ペロを召喚
