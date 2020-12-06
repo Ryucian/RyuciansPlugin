@@ -1,11 +1,11 @@
 name: RyucianPlugin
-version: ${project.version}
 main: com.spigot.Ryucian.RyucianPlugin.RyucianPlugin
+version: ${project.version}
 api-version: 1.16
 commands:
-   SummonPero:
-      description: ペロを召喚
-      usage: /SummonPero
-      permission: Protecter.basic
-      permission-message: You don't have <permission>
-      default: op
+  SummonPero:
+    usage: /SummonPero
+    permission: Protecter.basic
+    permission-message: You don't have <permission>
+    default: op
+ 
