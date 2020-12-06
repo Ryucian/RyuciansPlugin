@@ -4,6 +4,7 @@
   <artifactId>RyucianPlugin</artifactId>
   <version>0.0.1-SNAPSHOT</version>
 
+
     <!-- ↓ Spigot-repository -->
   <repositories>
     <repository>
@@ -37,6 +38,7 @@
 
   <!-- plugin.yml を pom.xml と連動させる -->
   <build>
+	<finalName>RyucianPlugin</finalName>
     <resources>
       <resource>
         <targetPath>.</targetPath>
