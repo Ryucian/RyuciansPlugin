@@ -3,8 +3,8 @@ main: com.spigot.Ryucian.RyucianPlugin.RyucianPlugin
 version: ${project.version}
 api-version: 1.16
 commands:
-  summonpero:
-    usage: /SummonPero
+  Ryucian:
+    usage: /Ryucian
     description: test
     permission: Protecter.basic
     permission-message: You don't have <permission>
