@@ -3,10 +3,34 @@ main: com.spigot.Ryucian.RyucianPlugin.RyucianPlugin
 version: ${project.version}
 api-version: 1.16
 commands:
-  Ryucian:
-    usage: /Ryucian
+  SummonPero:
+    usage: /SummonPero
     description: test
-    permission: Protecter.basic
+    permission: RyucianPlugin.SummonPero
+    permission-message: You don't have <permission>
+    default: op
+  SummonUsa:
+    usage: /SummonUsa
+    description: test
+    permission: RyucianPlugin.SummonUsa
+    permission-message: You don't have <permission>
+    default: op
+  ComeOnUsa:
+    usage: /ComeOnUsa
+    description: test
+    permission: RyucianPlugin.ComeOnUsa
+    permission-message: You don't have <permission>
+    default: op
+  OgyaBow:
+    usage: /OgyaBow
+    description: test
+    permission: RyucianPlugin.OgyaBow
+    permission-message: You don't have <permission>
+    default: op
+  SteakTabetai:
+    usage: /SteakTabetai
+    description: You can get Fresh Steak
+    permission: RyucianPlugin.SteakTabetai
     permission-message: You don't have <permission>
     default: op
  

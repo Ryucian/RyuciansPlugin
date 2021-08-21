@@ -10,14 +10,27 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Cat;
+import org.bukkit.entity.Cow;
+import org.bukkit.entity.Creature;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LingeringPotion;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -41,69 +54,16 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     @Override
 	public boolean onCommand(CommandSender sender,Command cmd,String commandLabel,String[] args)
 	{
-
-    	if(args[0].equalsIgnoreCase("SummonPero"))
-    	{
-    		SummonPero(sender);
-    		return true;
-    	}
-    	else if(args[0].equalsIgnoreCase("PeroHeal"))
-    	{
-    		Player player = (Player) sender;
-    		Cat pero = GetPero(player);
-    		PeroHeal(player,pero);
-    		return true;
-    	}
-    	else
-    	{
-    		getServer().broadcastMessage(cmd.getName() + " args:"+String.join(" " , args) );
-    		getServer().broadcastMessage("test1");
-    	}
-
+		//以下のコマンドはプレイヤーでない場合は処理しない
+		if(!(sender instanceof Player)) return true;
+		Player player = (Player) sender;
+    	if(     cmd.getName().equalsIgnoreCase("SummonPero")) 	Pero.SummonPero(player);
+    	else if(cmd.getName().equalsIgnoreCase("SummonUsa")   ) Usagi.SummonUsa(player,this);
+    	else if(cmd.getName().equalsIgnoreCase("ComeOnUsa")   ) Usagi.ComeOnUsa(player);
+    	else if(cmd.getName().equalsIgnoreCase("OgyaBow")     ) SuperCreekBow.GetSuperCreekBow(player);
+    	else if(cmd.getName().equalsIgnoreCase("SteakTabetai")) Util.GetFreshSteak(player);
     	return true;
 	}
-
-    /**
-     * その猫がペロかどうかを判定する
-     * @param cat
-     * @return
-     */
-    private boolean isPero(Cat cat)
-    {
-		//猫の名前がペロでなければ処理しない
-		//getServer().broadcastMessage("Cat Name Is" + cat.getCustomName());
-		if(!cat.getCustomName().equals("ペロ")) return false;
-
-		//猫の色が黒でなければ処理しない
-		//getServer().broadcastMessage("Cat Color Is" + cat.getCatType().toString() );
-		if(cat.getCatType() != Cat.Type.ALL_BLACK) return false;
-
-
-		return true;
-    }
-
-    /**
-     * ペロを召喚する
-     * @param sender
-     * @return
-     */
-    private boolean SummonPero(CommandSender sender)
-    {
-    	Player player = (Player) sender;
-
-    	var playersLocation = player.getLocation();
-
-    	var world = player.getWorld();
-
-    	//ペロを召喚する
-    	Cat pero=(Cat)world.spawnEntity(playersLocation,EntityType.CAT);
-    	pero.setCatType(Cat.Type.ALL_BLACK);
-    	pero.setCustomName("ペロ");
-    	pero.setOwner(player);
-    	pero.setMaxHealth(100);
-    	pero.setHealth(100);
-		return true;
-    }
 
 	/**
 	 * エンティティがエンティティからダメージを受けるとき呼び出される
@@ -120,7 +80,7 @@ public class RyucianPlugin extends JavaPlugin implements Listener
 		//ダメージを受けた対象が猫でない場合は処理を行わない
 		if(eventEntity instanceof Cat)
 		{
-			onPeroDamageByEntityEvent(e);
+			Pero.onDamageByEntityEvent(e);
 			return;
 		}
 		else if(e.getDamager() instanceof Player)
@@ -129,77 +89,37 @@ public class RyucianPlugin extends JavaPlugin implements Listener
 		}
 	}
 
+	/*
+	@EventHandler
+	public void onPlayerMove(PlayerMoveEvent e)
+	{
+		Player player = e.getPlayer();
+
+		Rabbit usa3 = Usagi.GetUsa3(player);
+
+		if(Objects.isNull(usa3)) return;
+
+		//プレイヤーとうさぴょんの距離が近い場合は処理しない
+		if(usa3.getLocation().distance(player.getLocation()) < 5) return;
+
+		//うさぴょんがプレイヤーを向く
+		usa3.setRotation(player.getLocation(usa3.getLocation()).getYaw(),usa3.getLocation().getPitch());
+
+		//うさぴょんをプレイヤーに近づける
+		usa3.setVelocity(Util.GetVector2Loc(usa3.getEyeLocation(), player.getLocation()));
+
+	}
+	*/
+
 	/**
-	 * プレイヤーがエンティティからダメージを与えたとき呼び出される
+	 * プレイヤーがエンティティにダメージを与えたとき呼び出される
 	 * onEntityDamageByEntityEventから呼び出される
 	 * @param e
 	 */
 	@EventHandler
 	public void onEntityDamageByPLayerEvent(EntityDamageByEntityEvent e)
 	{
-		//ダメージを与えた対象がプレイヤーでない場合は処理を行わない
-		if(!(e.getDamager() instanceof Player)) return;
-
-		//引数からプレイヤーと殴った相手を取得
-		Entity enemy = e.getEntity();
-		var player = (Player)e.getDamager();
-
-		//ペロを取得、取得できなければ処理を終了する
-		var pero = GetPero(player);
-		if(Objects.isNull(pero)) return;
-
-		//ペロショットを行う
-		PeroShot(enemy,pero);
-	}
-
-	/**
-	 * 猫がダメージを受けたときの処理
-	 * onEntityDamageByEntityEventから呼び出される
-	 * @param e
-	 */
-	public void onPeroDamageByEntityEvent(EntityDamageByEntityEvent e)
-	{
-		//引数からエンティティを取得
-		Entity eventEntity = e.getEntity();
-
-		//ダメージを受けた対象が猫でない場合は処理を行わない
-		if(!(eventEntity instanceof Cat)) return;
-		var cat = (Cat) eventEntity;
-
-		//ダメージを受けた対象がペロでない場合は処理を行わない
-		if(!isPero(cat)) return;
-
-		//ペロショットを行う
-		PeroShot(e.getDamager(),cat);
-	}
-
-	/**
-	 * プレイヤーが飼っている”ペロ”という黒猫を取得する関数
-	 * @param player
-	 * @return
-	 */
-	private Cat GetPero(Player player)
-	{
-		var entityList = player.getWorld().getEntities();
-		//エンティティリストから猫型でオーナがダメージを受けてる猫を探す
-		Cat pero = null;
-		for(Entity entity:entityList)
-		{
-			//猫型でないならば処理しない
-			if(!(entity instanceof Cat)) continue;
-			Cat cat = (Cat) entity;
-
-			//猫の飼い主がダメージを受けた人でなければ処理しない
-			if(cat.getOwner() != player) continue;
-
-			//猫がペロでなければ処理しない
-			if(!isPero(cat)) continue;
-
-			//上の条件に当てはまらない場合はペロなので検索終了とする
-			pero = cat;
-			break;
-		}
-		return pero;
+		Pero.onEntityDamageByPLayerEvent(e);
 	}
 
     /**
@@ -215,112 +135,66 @@ public class RyucianPlugin extends JavaPlugin implements Listener
 		//ダメージを受けた対象がプレイヤーでない場合は処理を行わない
 		if(!(eventEntity instanceof Player)) return;
 
-		//エンティティをプレイヤーとして扱う
-		Player player = (Player)eventEntity;
+		//ペロの行動
+		Pero.onPlayerDamage(e);
 
-		//ダメージを与えてきたやつを取得する
-		var enemy = e.getDamager();
-
-		//エンティティリストから猫型でオーナがダメージを受けてる猫を探す
-		Cat pero = GetPero(player);
-
-		//ペロが見つかってなければ処理を終了する
-		if(Objects.isNull(pero)) return;
-
-		//ペロヒールを行う
-		PeroHeal(player,pero);
-
-		//ペロショットを行う
-		PeroShot(enemy,pero);
+		//うさこの行動を行う
+		Usagi.onPlayerDamage(e);
 	}
 
     /**
-     * ペロヒールを行います
-     * @param player
-     * @param pero
+     * 投擲物が何かにあたった場合に呼び出される
+     * @param projectileHitEvent
      */
-    private void PeroHeal(Player player,Cat pero)
+    @EventHandler
+    public void onProjectileHit(ProjectileHitEvent projectileHitEvent)
     {
-		//ペロが見つかってなければ処理を終了する
-		if(Objects.isNull(pero)) return;
-
-		//持続回復する残留ポーションを作る
-		ItemStack itemStack = new ItemStack(Material.LINGERING_POTION);
-		PotionMeta potionMeta = (PotionMeta)itemStack.getItemMeta();
-		potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.REGENERATION, 600*8, 0), true);
-		potionMeta.setColor(Color.BLUE);
-		itemStack.setItemMeta(potionMeta);
-
-		//残留ポーションをペロからプレイヤーに向かって投げる
-		Vector v = GetVector2Loc(pero.getLocation(),player.getLocation());
-    	World world = player.getWorld();
-    	ThrownPotion item=(ThrownPotion) world.spawnEntity(pero.getLocation().add(0,1,0),EntityType.SPLASH_POTION);
-		item.setItem(itemStack);
-		item.setShooter(pero);
-		item.setVelocity(v);
-    }
-
-
-    /**
-     * ペロショットを行います
-     * @param enemy
-     * @param pero
-     */
-    private void PeroShot(Entity enemy,Cat pero)
-    {
-    	//プレイヤーには攻撃しない
-    	if(enemy instanceof Player) return;
-
-    	//ペロ同士は殴らない
-    	if(enemy instanceof Cat)
-    	{
-    		Cat cat = (Cat)enemy;
-    		if(isPero(cat)) return;
-    	}
-
-    	//距離が近ければ攻撃する
-    	Double distance = pero.getLocation().distance(enemy.getLocation());
-    	if(distance<7)
-    	{
-        	pero.attack(enemy);
-    	}
-    	//getServer().broadcastMessage("distance:"+distance.toString());
-
-    	/*
-    	var world = pero.getWorld();
-		Vector v = GetVector2Loc(pero.getLocation(),enemy.getLocation());
-		Arrow arrow = world.spawnArrow(pero.getLocation().add(0, 1, 0), v, 0.5F, 0);
-		arrow.setShooter(pero);
-		arrow.setColor(Color.BLACK);
-		arrow.setTicksLived(1);
-		*/
+    	Pero.onProjectileHit(projectileHitEvent);
+    	//SuperCreekBow.onProjectileHit(projectileHitEvent);
     }
 
     /**
-     * 場所originから場所targetまでのベクトルを取得する
-     * @param origin
-     * @param target
-     * @return
+     * プレイヤーがオブジェクトや空気を右クリックする時に呼び出される。
+     * それぞれの手に対して呼び出される可能性がある。
+     * @param e
      */
-	private Vector GetVector2Loc(Location origin,Location target)
-	{
-		return target.toVector().subtract(origin.toVector()).normalize();
-	}
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent e)
+    {
+    	SuperCreekBow.onPlayerInteract(e);
+    }
 
+    /**
+     * プレイヤーがチャットを打ち込んだとき
+     * @param event
+     */
+    @EventHandler
+    public void OnPlayerChat(PlayerChatEvent event)
+    {
+    	String msg = event.getMessage();
+    	Player player = event.getPlayer();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    	if(msg.equalsIgnoreCase("うさこ人参頂戴"))
+    	{
+    		Usagi.GiveCarrot(Usagi.GetUsako(player),player,false);
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("みんな人参頂戴"))
+    	{
+    		var entityList = player.getWorld().getEntities();
+    		//エンティティリストから猫型でオーナがダメージを受けてる猫を探す
+    		for(Entity entity:entityList)
+    		{
+    			//猫型でないならば処理しない
+    			if(!(entity instanceof Rabbit)) continue;
+    			Rabbit rabbit = (Rabbit) entity;
+        		Usagi.GiveCarrot(rabbit,player,false);
+    		}
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("ステーキ食べたい") || msg.equalsIgnoreCase("ステーキたべたい"))
+    	{
+    		Util.GetFreshSteak(player);
+    	}
+    }
 }
