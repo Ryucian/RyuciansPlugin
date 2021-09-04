@@ -6,6 +6,8 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.data.AnaloguePowerable;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Arrow;
@@ -24,7 +26,9 @@ import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -162,7 +166,37 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     public void onPlayerInteract(PlayerInteractEvent e)
     {
     	SuperCreekBow.onPlayerInteract(e);
+
+    	//感圧板をプレイヤーが踏んだときの処理のサンプル
+    	/*
+        Player player = e.getPlayer();
+        if (e.getAction() == Action.PHYSICAL && e.getClickedBlock().getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE)
+        {
+        	var blockData = (AnaloguePowerable)e.getClickedBlock().getBlockData();
+        	blockData.setPower(15);
+
+        	e.getClickedBlock().setBlockData(blockData);
+
+            player.sendMessage("Player interact Heavy Weighted Pressure Plate");
+        }
+        */
+
     }
+
+    @EventHandler
+    public void onEntityInteract(EntityInteractEvent e)
+    {
+
+    	//生き物とブロックの衝突でない場合は処理しない
+    	if(Objects.isNull(e.getBlock())) return;
+
+    	//生き物が歪んだ感圧板を踏んで居たらそれを無効にする
+    	if (e.getBlock().getType() == Material.WARPED_PRESSURE_PLATE)
+    	{
+            e.setCancelled(true);
+        }
+    }
+
 
     /**
      * プレイヤーがチャットを打ち込んだとき
