@@ -1,5 +1,6 @@
 package com.spigot.Ryucian.RyucianPlugin;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 import org.bukkit.Color;
@@ -34,8 +35,10 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -165,21 +168,13 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e)
     {
+
+        //クリックした先が空気か普通のブロックでない場合は処理しない
+        if (!(e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))) return;
+
     	SuperCreekBow.onPlayerInteract(e);
 
-    	//感圧板をプレイヤーが踏んだときの処理のサンプル
-    	/*
-        Player player = e.getPlayer();
-        if (e.getAction() == Action.PHYSICAL && e.getClickedBlock().getType() == Material.HEAVY_WEIGHTED_PRESSURE_PLATE)
-        {
-        	var blockData = (AnaloguePowerable)e.getClickedBlock().getBlockData();
-        	blockData.setPower(15);
-
-        	e.getClickedBlock().setBlockData(blockData);
-
-            player.sendMessage("Player interact Heavy Weighted Pressure Plate");
-        }
-        */
+    	Magic.onPlayerInteract(e);
 
     }
 
@@ -197,6 +192,16 @@ public class RyucianPlugin extends JavaPlugin implements Listener
         }
     }
 
+
+    /**
+     * プレイヤーがポーションや牛乳を飲んだとき
+     * @param e
+     */
+    @EventHandler
+    public void onPlayerItemConsume(PlayerItemConsumeEvent e)
+    {
+    	Magic.onPlayerItemConsume(e);
+    }
 
     /**
      * プレイヤーがチャットを打ち込んだとき
@@ -229,6 +234,38 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	else if(msg.equalsIgnoreCase("ステーキ食べたい") || msg.equalsIgnoreCase("ステーキたべたい"))
     	{
     		Util.GetFreshSteak(player);
+    	}
+    	else if(msg.equalsIgnoreCase("マナ確認"))
+    	{
+    		player.sendMessage("MP："+Magic.GetMagicPoint(player));
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("マナ設定"))
+    	{
+    		Magic.SetMagicPoint(player,1000);
+    		player.sendMessage("MP："+Magic.GetMagicPoint(player));
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("マナ加算"))
+    	{
+    		Magic.AddMagicPoint(player,1000);
+    		player.sendMessage("MP："+Magic.GetMagicPoint(player));
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("火矢の書"))
+    	{
+    		Magic.GetArrowWand(player);
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("跳躍の書"))
+    	{
+    		Magic.GetJumpBoostBook(player);
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("魔力回復"))
+    	{
+    		Magic.GetManaGainPotion(player);
+    		event.setCancelled(true);
     	}
     }
 }
