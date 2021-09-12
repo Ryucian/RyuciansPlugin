@@ -3,6 +3,7 @@ package com.spigot.Ryucian.RyucianPlugin;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -255,6 +256,11 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	else if(msg.equalsIgnoreCase("火矢の書"))
     	{
     		Magic.GetArrowWand(player);
+    		event.setCancelled(true);
+    	}
+    	else if(msg.equalsIgnoreCase("氷矢の書"))
+    	{
+    		Magic.GetIceArrow(player);
     		event.setCancelled(true);
     	}
     	else if(msg.equalsIgnoreCase("跳躍の書"))

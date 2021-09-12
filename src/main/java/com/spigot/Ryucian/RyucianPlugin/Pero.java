@@ -226,6 +226,9 @@ public  class Pero
      */
 	public static boolean isPero(Cat cat)
     {
+		//猫に名前がつけられていなければペロではない
+		if(Objects.isNull(cat.getCustomName())) return false;
+
 		//猫の名前がペロでなければ処理しない
 		//getServer().broadcastMessage("Cat Name Is" + cat.getCustomName());
 		if(!cat.getCustomName().equals("ペロ")) return false;

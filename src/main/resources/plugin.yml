@@ -33,11 +33,5 @@ commands:
     permission: RyucianPlugin.SteakTabetai
     permission-message: You don't have <permission>
     default: op
-  MonsterShibakitai:
-    usage: /MonsterShibakitai
-    description: You can get Monster for Shibaki
-    permission: RyucianPlugin.MonsterShibakitai
-    permission-message: You don't have <permission>
-    default: op
-     
+ 
  

@@ -33,6 +33,59 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.util.Vector;
+
+import java.math.BigDecimal;
+import java.util.Objects;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.block.data.AnaloguePowerable;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Cat;
+import org.bukkit.entity.Cow;
+import org.bukkit.entity.Creature;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LingeringPotion;
+import org.bukkit.entity.Monster;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.SpectralArrow;
+import org.bukkit.entity.ThrownPotion;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -40,8 +93,10 @@ import org.bukkit.util.Vector;
 public class Magic
 {
 
+	final static String SCORE_BOARD_ID="RyucianMP";
 	final static String MAGIC_POINT="MagicPoint";
 	final static String FIRE_ARROW_BOOK="火矢の書";
+	final static String ICE_ARROW_BOOK="氷矢の書";
 	final static String JUMP_BOOST_BOOK="跳躍の書";
 	final static String SUMMON_PERO_BOOK="ペロの書";
 
@@ -64,6 +119,7 @@ public class Magic
 		user.setConfigProperty(MAGIC_POINT, BigDecimal.valueOf(mp) );
 		user.save();
 	}
+
 
 	/**
 	 * 魔力を加算する（魔法を使ったとき・回復薬を飲んだときに使う）
@@ -114,8 +170,41 @@ public class Magic
 		mp = mp.add(addMp);
 		user.setConfigProperty(MAGIC_POINT, mp );
 		user.save();
-		player.sendMessage("MP "+ beforeMp.toString() + "→" + mp.toString() );
-		//user.reloadConfig();
+		upsetMpBoard(player);
+	}
+
+	/**
+	 * スコアボード表示用オブジェクトを取得する
+	 * @return
+	 */
+	public static Objective GetSBObjective()
+	{
+		// メインスコアボードを取得します。
+        ScoreboardManager manager = Bukkit.getScoreboardManager();
+        Scoreboard board = manager.getNewScoreboard();
+
+        // オブジェクティブが既に登録されているかどうか確認し、
+        // 登録されていないなら新規作成します。
+        Objective objective = board.getObjective(SCORE_BOARD_ID);
+        if ( objective == null )
+        {
+        	objective = board.registerNewObjective(SCORE_BOARD_ID, SCORE_BOARD_ID, "Magic Point");
+            objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+            objective.setDisplayName("Mana");
+        }
+        return objective;
+	}
+
+	/**
+	 * MPスコアボード表示
+	 * @return
+	 */
+	public static void upsetMpBoard(Player player)
+	{
+		Objective objective = GetSBObjective();
+        player.setScoreboard(objective.getScoreboard());
+        Score score = objective.getScore(player.getName());
+        score.setScore(GetMagicPointInt(player));
 	}
 
 	/**
@@ -151,7 +240,7 @@ public class Magic
 	 */
 	public static void GetBook(Player player,String bookName,List<String> bookLore)
 	{
-		ItemStack scBow = new ItemStack(Material.BOOK,1);
+		ItemStack scBow = new ItemStack(Material.ENCHANTED_BOOK,1);
 	    ItemMeta scBowMeta = scBow.getItemMeta();
 	    scBowMeta.setDisplayName(bookName);
 	    scBowMeta.setLore(bookLore);
@@ -167,6 +256,18 @@ public class Magic
 	public static void GetArrowWand(Player player)
 	{
 		String bookName = ChatColor.RED + FIRE_ARROW_BOOK + ChatColor.RESET;
+	    var bookLore = new ArrayList<String>();
+	    bookLore.add("消費MP:10");
+		GetBook(player,bookName,bookLore);
+	}
+
+	/**
+	 * プレイヤーに氷矢の書を追加する
+	 * @param player
+	 */
+	public static void GetIceArrow(Player player)
+	{
+		String bookName = ChatColor.RED + ICE_ARROW_BOOK + ChatColor.RESET;
 	    var bookLore = new ArrayList<String>();
 	    bookLore.add("消費MP:10");
 		GetBook(player,bookName,bookLore);
@@ -214,7 +315,9 @@ public class Magic
         Player player = e.getPlayer();
 
         //持っているものが本でなければ処理しない
-        if( !(player.getInventory().getItemInMainHand().getType().equals(Material.BOOK)) ) return;
+        if( !(player.getInventory().getItemInMainHand().getType().equals(Material.BOOK))
+        	&& !(player.getInventory().getItemInMainHand().getType().equals(Material.ENCHANTED_BOOK))
+        	&& !(player.getInventory().getItemInMainHand().getType().equals(Material.KNOWLEDGE_BOOK)) ) return;
 
         //アイテム名を取得
         String handItemName = player.getInventory().getItemInMainHand().getItemMeta().getDisplayName();
@@ -232,6 +335,29 @@ public class Magic
     		var sb =  (Arrow)world.spawnEntity(player.getLocation().add(0, 1, 0), EntityType.ARROW);
     		//sb.setShooter(player);
     		sb.setVisualFire(true);
+    		sb.setFireTicks(1000);
+    		sb.setVelocity(player.getLocation().getDirection().normalize().multiply(5));
+    		AddMagicPoint(player, -USE_MP);
+    		e.setCancelled(false);
+        	return;
+        }
+        //持ってる本の名前が赤文字の氷矢の書の場合
+        if(handItemName.equalsIgnoreCase(ChatColor.RED + ICE_ARROW_BOOK))
+        {
+        	final int USE_MP = 10;
+        	Integer beforeMp = GetMagicPointInt(player);
+        	//MPが少ない場合使わない
+        	if(beforeMp<USE_MP) return;
+        	var world = player.getWorld();
+        	Vector unitVector = new Vector(player.getLocation().getDirection().getX(), 0, player.getLocation().getDirection().getZ());
+        	unitVector = unitVector.normalize();
+    		var sb =  (Arrow)world.spawnEntity(player.getLocation().add(0, 1, 0), EntityType.ARROW);
+    		sb.setColor(Color.BLUE);
+    		sb.setDamage(0);
+    		sb.setKnockbackStrength(0);
+    		sb.setBasePotionData(new PotionData(PotionType.SLOWNESS));
+    		sb.addCustomEffect(new PotionEffect(PotionEffectType.SLOW,100,100), false);
+    		sb.addCustomEffect(new PotionEffect(PotionEffectType.JUMP,100,250), false);
     		sb.setVelocity(player.getLocation().getDirection().normalize().multiply(5));
     		AddMagicPoint(player, -USE_MP);
         	return;
@@ -244,12 +370,15 @@ public class Magic
         	//MPが少ない場合使わない
         	if(beforeMp<USE_MP) return;
 
+        	player.setVelocity(player.getVelocity().add(new Vector(0,10,0)));
+
+        	/*
         	PotionEffect pe = new PotionEffect(PotionEffectType.JUMP,500,10);
         	player.addPotionEffect(pe);
 
         	PotionEffect pe2 = new PotionEffect(PotionEffectType.SPEED,500,1);
         	player.addPotionEffect(pe2);
-
+			*/
 
     		AddMagicPoint(player, -USE_MP);
         	return;
@@ -268,7 +397,6 @@ public class Magic
     	ItemStack item = e.getItem();
     	ItemMeta itemMeta = item.getItemMeta();
     	String itemName = itemMeta.getDisplayName();
-    	player.sendMessage(itemName);
 
     	//System.out.println(itemName);
     	//System.out.println(ChatColor.RED + "魔力回復のポーション");

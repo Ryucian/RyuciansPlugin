@@ -6,3 +6,5 @@ target/classes/META-INF/maven/com.spigot.ryucian/RyucianPlugin/pom.properties
 target/classes/plugin.yml
 target/classes/plugin.yml
 *.class
+target/RyucianPlugin.jar
+target/RyucianPlugin.jar
