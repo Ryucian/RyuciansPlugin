@@ -35,6 +35,7 @@ import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -70,6 +71,7 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	else if(cmd.getName().equalsIgnoreCase("ComeOnUsa")   ) Usagi.ComeOnUsa(player);
     	else if(cmd.getName().equalsIgnoreCase("OgyaBow")     ) SuperCreekBow.GetSuperCreekBow(player);
     	else if(cmd.getName().equalsIgnoreCase("SteakTabetai")) Util.GetFreshSteak(player);
+    	else if(cmd.getName().equalsIgnoreCase("GetRyucianBook")) Magic.GetBookByCommand(player,args[0]);
     	return true;
 	}
 
@@ -162,6 +164,18 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     }
 
     /**
+     * プレイヤーがエンティティを右クリックする時に呼び出される。
+     * @param e
+     */
+    @EventHandler
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent e)
+    {
+    	Magic.onPlayerInteractEntity(e);
+    }
+
+
+
+    /**
      * プレイヤーがオブジェクトや空気を右クリックする時に呼び出される。
      * それぞれの手に対して呼び出される可能性がある。
      * @param e
@@ -211,6 +225,9 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     @EventHandler
     public void OnPlayerChat(PlayerChatEvent event)
     {
+    	//各種メッセージコマンドを一旦すべて廃止
+    	return;
+    	/*
     	String msg = event.getMessage();
     	Player player = event.getPlayer();
 
@@ -273,5 +290,6 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     		Magic.GetManaGainPotion(player);
     		event.setCancelled(true);
     	}
+    	*/
     }
 }

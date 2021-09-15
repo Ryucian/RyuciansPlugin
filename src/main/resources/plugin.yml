@@ -21,16 +21,10 @@ commands:
     permission: RyucianPlugin.ComeOnUsa
     permission-message: You don't have <permission>
     default: op
-  OgyaBow:
-    usage: /OgyaBow
+  GetRyucianBook:
+    usage: /GetRyucianBook 
     description: test
-    permission: RyucianPlugin.OgyaBow
-    permission-message: You don't have <permission>
-    default: op
-  SteakTabetai:
-    usage: /SteakTabetai
-    description: You can get Fresh Steak
-    permission: RyucianPlugin.SteakTabetai
+    permission: RyucianPlugin.GetBook
     permission-message: You don't have <permission>
     default: op
  

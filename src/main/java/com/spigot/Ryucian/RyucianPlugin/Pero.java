@@ -273,7 +273,7 @@ public  class Pero
     /**
      * ペロを召喚する
      * @param sender
-     * @return
+     * @return 召喚に成功したかどうか
      */
     public static boolean SummonPero(Player player)
     {

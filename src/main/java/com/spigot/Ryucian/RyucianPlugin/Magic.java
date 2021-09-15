@@ -3,8 +3,13 @@ package com.spigot.Ryucian.RyucianPlugin;
 import java.io.File;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -79,6 +84,7 @@ import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -99,13 +105,92 @@ public class Magic
 	final static String ICE_ARROW_BOOK="氷矢の書";
 	final static String JUMP_BOOST_BOOK="跳躍の書";
 	final static String SUMMON_PERO_BOOK="ペロの書";
+	final static int POTION_PRICE = 1000;
+	final static String POTION_STORE_NAME="ポーション屋さん("+POTION_PRICE+"$)";
+
+	final static Map<String, Long> MAGIC_COST = new HashMap<String, Long>() {
+    {
+    	put(SUMMON_PERO_BOOK, (long) 300);
+    }};
 
 	private static Essentials ess;
+
+	private static LocalDateTime onPlayerInteractEntityTime = LocalDateTime.now();
 
 	static
 	{
 		ess = (Essentials)Bukkit.getPluginManager().getPlugin("Essentials");
 	}
+
+	/**
+	 * ユーザのお金を加算する
+	 * @param player
+	 * @param money 加算するお金（お金を引く場合はマイナスを設定）
+	 */
+	public static void AddMoney(Player player,long money)
+	{
+		var user = ess.getUser(player);
+		var nowMoney = user.getMoney();
+		try
+		{
+			user.setMoney(nowMoney.add(BigDecimal.valueOf(money)) );
+			user.save();
+		}
+		catch (MaxMoneyException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * ユーザのお金を加算する
+	 * @param player
+	 * @param money 加算するお金（お金を引く場合はマイナスを設定）
+	 */
+	public static long GetMoney(Player player)
+	{
+		var user = ess.getUser(player);
+		return user.getMoney().toBigInteger().longValue();
+	}
+
+
+    /**
+     * プレイヤーがエンティティを右クリックする時に呼び出される。
+     * @param e
+     */
+    public static void onPlayerInteractEntity(PlayerInteractEntityEvent e)
+    {
+    	//一秒以内に同一処理が実行されている場合は処理しない
+    	if(ChronoUnit.SECONDS.between(onPlayerInteractEntityTime,LocalDateTime.now())<1)
+    	{
+    		//System.out.println("実行間隔:"+ChronoUnit.SECONDS.between(LocalDateTime.now(), onPlayerInteractEntityTime));
+    		return;
+    	}
+
+    	var entity = e.getRightClicked();
+
+    	//右クリックされたエンティティに名前がついていない場合は処理しない
+    	if(Objects.isNull(entity.getCustomName())) return;
+
+    	//名前がポーション屋さんでなければ処理しない
+    	if(!entity.getCustomName().equalsIgnoreCase(POTION_STORE_NAME)) return;
+
+    	//プレイヤーのお金が少なすぎる場合は処理しない
+    	var player = e.getPlayer();
+    	var money = GetMoney(player);
+    	if(money<POTION_PRICE)
+    	{
+    		player.sendMessage("所持金が足りないようだ。（所持金："+money+"$）");
+    		return;
+    	}
+
+    	//プレイヤーのお金を減らしてポーションを与える
+    	player.getWorld().dropItem(entity.getLocation(), GetManaPotionData());
+    	AddMoney(player,-POTION_PRICE);
+
+    	//最後に実行した時間を設定する
+    	onPlayerInteractEntityTime = LocalDateTime.now();
+    }
 
 	/**
 	 * 魔力を設定する（管理者用）
@@ -188,9 +273,9 @@ public class Magic
         Objective objective = board.getObjective(SCORE_BOARD_ID);
         if ( objective == null )
         {
-        	objective = board.registerNewObjective(SCORE_BOARD_ID, SCORE_BOARD_ID, "Magic Point");
+        	objective = board.registerNewObjective(SCORE_BOARD_ID, SCORE_BOARD_ID,"Status");
             objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-            objective.setDisplayName("Mana");
+            //objective.setDisplayName("Mana");
         }
         return objective;
 	}
@@ -203,8 +288,10 @@ public class Magic
 	{
 		Objective objective = GetSBObjective();
         player.setScoreboard(objective.getScoreboard());
-        Score score = objective.getScore(player.getName());
+        Score score = objective.getScore("MP   :");
         score.setScore(GetMagicPointInt(player));
+        Score scoreMoney = objective.getScore("Money:");
+        scoreMoney.setScore((int) GetMoney(player));
 	}
 
 	/**
@@ -249,6 +336,19 @@ public class Magic
         inventory.addItem(scBow);
 	}
 
+
+	/**
+	 * プレイヤーに本を追加する
+	 * @param player
+	 * @param bookName
+	 */
+	public static void GetBook(Player player,String bookNameNoColor)
+	{
+	    var bookLore = new ArrayList<String>();
+	    bookLore.add("消費MP:"+MAGIC_COST.get(bookNameNoColor));
+	    GetBook( player, ChatColor.RED + bookNameNoColor + ChatColor.RESET, bookLore);
+	}
+
 	/**
 	 * プレイヤーに火矢の書を追加する
 	 * @param player
@@ -286,23 +386,31 @@ public class Magic
 	}
 
 	/**
+	 * マナ回復ポーションのアイテムデータを取得する
+	 * @return
+	 */
+	public static ItemStack GetManaPotionData()
+	{
+		//SuperCreekBowを作る
+		ItemStack manaPotion = new ItemStack(Material.POTION,1);
+	    ItemMeta scBowMeta = manaPotion.getItemMeta();
+	    scBowMeta.setDisplayName(ChatColor.RED + "魔力回復のポーション" + ChatColor.RESET);
+	    scBowMeta.setLocalizedName("魔力回復のポーション");
+	    var lore = new ArrayList<String>();
+	    lore.add("魔力を1000回復する");
+	    scBowMeta.setLore(lore);
+	    manaPotion.setItemMeta(scBowMeta);
+	    return manaPotion;
+	}
+
+	/**
 	 * マナポーションを取得する
 	 * @param player
 	 */
 	public static void GetManaGainPotion(Player player)
 	{
-		//SuperCreekBowを作る
-		ItemStack scBow = new ItemStack(Material.POTION,1);
-	    ItemMeta scBowMeta = scBow.getItemMeta();
-	    scBowMeta.setDisplayName(ChatColor.RED + "魔力回復のポーション" + ChatColor.RESET);
-	    scBowMeta.setLocalizedName("魔力回復のポーション");
-	    var lore = new ArrayList<String>();
-	    lore.add("魔力を100回復する");
-	    scBowMeta.setLore(lore);
-	    scBow.setItemMeta(scBowMeta);
-
         PlayerInventory inventory = player.getInventory();
-        inventory.addItem(scBow);
+        inventory.addItem(GetManaPotionData());
 	}
 
     /**
@@ -372,13 +480,23 @@ public class Magic
 
         	player.setVelocity(player.getVelocity().add(new Vector(0,10,0)));
 
-        	/*
-        	PotionEffect pe = new PotionEffect(PotionEffectType.JUMP,500,10);
-        	player.addPotionEffect(pe);
+    		AddMagicPoint(player, -USE_MP);
+        	return;
+        }
+        //持ってる本の名前が赤文字の「ペロの書の場合」
+        if(handItemName.equalsIgnoreCase(ChatColor.RED + SUMMON_PERO_BOOK))
+        {
 
-        	PotionEffect pe2 = new PotionEffect(PotionEffectType.SPEED,500,1);
-        	player.addPotionEffect(pe2);
-			*/
+        	final int USE_MP = 100;
+        	Integer beforeMp = GetMagicPointInt(player);
+
+        	//MPが少ない場合使わない
+        	if(beforeMp<USE_MP) return;
+
+        	var isPeroSummoned =  Pero.SummonPero(player);
+
+        	//ペロの召喚に失敗した（既に召喚済み）の場合は魔力を引かない
+        	if(isPeroSummoned == false) return;
 
     		AddMagicPoint(player, -USE_MP);
         	return;
@@ -406,5 +524,28 @@ public class Magic
     		AddMagicPoint(player,1000);
     	}
     }
+
+	public static void GetBookByCommand(Player player, String bookName)
+	{
+		//本の名前が指定されていないときは処理しない
+		if(Objects.isNull(bookName)) return;
+
+		if(bookName.equalsIgnoreCase(FIRE_ARROW_BOOK))
+		{
+			GetBook(player,FIRE_ARROW_BOOK);
+		}
+		else if(bookName.equalsIgnoreCase(ICE_ARROW_BOOK))
+		{
+			GetBook(player,ICE_ARROW_BOOK);
+		}
+		else if(bookName.equalsIgnoreCase(JUMP_BOOST_BOOK))
+		{
+			GetBook(player,JUMP_BOOST_BOOK);
+		}
+		else if(bookName.equalsIgnoreCase(SUMMON_PERO_BOOK))
+		{
+			GetBook(player,SUMMON_PERO_BOOK);
+		}
+	}
 
 }
