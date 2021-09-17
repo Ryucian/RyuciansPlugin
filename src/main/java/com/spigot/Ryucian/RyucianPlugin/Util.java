@@ -12,6 +12,11 @@ public class Util {
 
 	private static Random random = new Random();
 
+	public static int getRandom(int max)
+	{
+		return random.nextInt(max);
+	}
+
     /**
      * 場所originから場所targetまでのベクトルを取得する
      * @param origin

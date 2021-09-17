@@ -68,6 +68,7 @@ import org.bukkit.entity.Creature;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LingeringPotion;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -96,6 +97,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
+
 public class Magic
 {
 
@@ -105,12 +107,19 @@ public class Magic
 	final static String ICE_ARROW_BOOK="氷矢の書";
 	final static String JUMP_BOOST_BOOK="跳躍の書";
 	final static String SUMMON_PERO_BOOK="ペロの書";
+	final static String ONIKU_TABETAI_BOOK="焼き肉の書";
 	final static int POTION_PRICE = 1000;
+	final static int GACHA_PRICE = 500;
 	final static String POTION_STORE_NAME="ポーション屋さん("+POTION_PRICE+"$)";
+	final static String BOOK_GACHA_STORE_NAME="魔導書ガチャ屋さん";
 
-	final static Map<String, Long> MAGIC_COST = new HashMap<String, Long>() {
+	final static Map<String, Integer> MAGIC_COST = new HashMap<String, Integer>() {
     {
-    	put(SUMMON_PERO_BOOK, (long) 300);
+    	put(FIRE_ARROW_BOOK,10);
+    	put(ICE_ARROW_BOOK,10);
+    	put(JUMP_BOOST_BOOK,10);
+    	put(SUMMON_PERO_BOOK, 300);
+    	put(ONIKU_TABETAI_BOOK,300);
     }};
 
 	private static Essentials ess;
@@ -160,8 +169,8 @@ public class Magic
      */
     public static void onPlayerInteractEntity(PlayerInteractEntityEvent e)
     {
-    	//一秒以内に同一処理が実行されている場合は処理しない
-    	if(ChronoUnit.SECONDS.between(onPlayerInteractEntityTime,LocalDateTime.now())<1)
+    	//0.5秒以内に同一処理が実行されている場合は処理しない
+    	if(Math.abs(ChronoUnit.MILLIS.between(onPlayerInteractEntityTime,LocalDateTime.now()))<500)
     	{
     		//System.out.println("実行間隔:"+ChronoUnit.SECONDS.between(LocalDateTime.now(), onPlayerInteractEntityTime));
     		return;
@@ -172,21 +181,57 @@ public class Magic
     	//右クリックされたエンティティに名前がついていない場合は処理しない
     	if(Objects.isNull(entity.getCustomName())) return;
 
-    	//名前がポーション屋さんでなければ処理しない
-    	if(!entity.getCustomName().equalsIgnoreCase(POTION_STORE_NAME)) return;
+    	//エンティティが生きてるエンティティでなければ処理しない
+		if(!(entity instanceof LivingEntity)) return;
+		LivingEntity livingEntity = (LivingEntity)entity;
 
-    	//プレイヤーのお金が少なすぎる場合は処理しない
-    	var player = e.getPlayer();
-    	var money = GetMoney(player);
-    	if(money<POTION_PRICE)
+    	//名前がポーション屋さんの場合
+    	if(entity.getCustomName().equalsIgnoreCase(POTION_STORE_NAME))
     	{
-    		player.sendMessage("所持金が足りないようだ。（所持金："+money+"$）");
-    		return;
-    	}
+	    	//プレイヤーのお金が少なすぎる場合は処理しない
+	    	var player = e.getPlayer();
+	    	var money = GetMoney(player);
+	    	if(money<POTION_PRICE)
+	    	{
+	    		player.sendMessage("所持金が足りないようだ。（所持金："+money+"$）");
+	    		return;
+	    	}
 
-    	//プレイヤーのお金を減らしてポーションを与える
-    	player.getWorld().dropItem(entity.getLocation(), GetManaPotionData());
-    	AddMoney(player,-POTION_PRICE);
+	    	//プレイヤーのお金を減らしてポーションを与える
+	    	player.getWorld().dropItem(entity.getLocation(), GetManaPotionData());
+	    	AddMoney(player,-POTION_PRICE);
+    	}
+    	else if(entity.getCustomName().equalsIgnoreCase(BOOK_GACHA_STORE_NAME))
+    	{
+
+	    	//プレイヤーのお金が少なすぎる場合は処理しない
+	    	var player = e.getPlayer();
+	    	var money = GetMoney(player);
+	    	if(money<GACHA_PRICE)
+	    	{
+	    		player.sendMessage("所持金が足りないようだ。（一回："+GACHA_PRICE+"$）");
+	    		return;
+	    	}
+
+	    	//プレイヤーのお金を減らしてポーションを与える
+	    	int rnd = Util.getRandom(MAGIC_COST.size());
+	    	int cnt = 1;
+	    	for(String key : MAGIC_COST.keySet())
+	    	{
+	    		if(rnd == cnt)
+	    		{
+	    			var bookname = ChatColor.RED + key + ChatColor.RESET;
+	    			var bookLore = new ArrayList<String>();
+	    			bookLore.add("消費MP:"+MAGIC_COST.get(key));
+	    			bookLore.add(player.getName()+"がガチャで当てたやつ");
+	    	    	//本をドロップする
+	    	    	player.getWorld().dropItem(entity.getLocation(), GetBookData(bookname,bookLore));
+	    			break;
+	    		}
+	    		cnt++;
+	    	}
+	    	AddMoney(player,-GACHA_PRICE);
+    	}
 
     	//最後に実行した時間を設定する
     	onPlayerInteractEntityTime = LocalDateTime.now();
@@ -275,7 +320,6 @@ public class Magic
         {
         	objective = board.registerNewObjective(SCORE_BOARD_ID, SCORE_BOARD_ID,"Status");
             objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-            //objective.setDisplayName("Mana");
         }
         return objective;
 	}
@@ -320,6 +364,22 @@ public class Magic
 	}
 
 	/**
+	 * 魔導書のアイテムデータを取得する
+	 * @param bookName
+	 * @param bookLore
+	 * @return
+	 */
+	public static ItemStack GetBookData(String bookName,List<String> bookLore)
+	{
+		ItemStack scBow = new ItemStack(Material.ENCHANTED_BOOK,1);
+	    ItemMeta scBowMeta = scBow.getItemMeta();
+	    scBowMeta.setDisplayName(bookName);
+	    scBowMeta.setLore(bookLore);
+	    scBow.setItemMeta(scBowMeta);
+	    return scBow;
+	}
+
+	/**
 	 * プレイヤーに本を追加する
 	 * @param player
 	 * @param bookName
@@ -327,13 +387,8 @@ public class Magic
 	 */
 	public static void GetBook(Player player,String bookName,List<String> bookLore)
 	{
-		ItemStack scBow = new ItemStack(Material.ENCHANTED_BOOK,1);
-	    ItemMeta scBowMeta = scBow.getItemMeta();
-	    scBowMeta.setDisplayName(bookName);
-	    scBowMeta.setLore(bookLore);
-	    scBow.setItemMeta(scBowMeta);
         PlayerInventory inventory = player.getInventory();
-        inventory.addItem(scBow);
+        inventory.addItem(GetBookData(bookName,bookLore));
 	}
 
 
@@ -413,6 +468,26 @@ public class Magic
         inventory.addItem(GetManaPotionData());
 	}
 
+	/**
+	 * 魔法で放つ雪玉を取得する
+	 * @param player
+	 * @param customName
+	 * @return
+	 */
+	private static Snowball getMagicSnowball(Player player,String customName)
+	{
+		var world = player.getWorld();
+		var plocation = player.getLocation();
+    	var sb =  (Snowball)world.spawnEntity(plocation.add(0, 1, 0), EntityType.SNOWBALL);
+		sb.setShooter(player);
+    	sb.setCustomName(customName);
+		sb.setVelocity(plocation.getDirection().add(new Vector(0,0.5,0)).normalize());
+		sb.setTicksLived(100);
+		sb.setGravity(true);
+		sb.setFallDistance(1000);
+		return sb;
+	}
+
     /**
      * プレイヤーがオブジェクトや空気を右クリックする時に呼び出される。
      * それぞれの手に対して呼び出される可能性がある。
@@ -437,41 +512,25 @@ public class Magic
         	Integer beforeMp = GetMagicPointInt(player);
         	//MPが少ない場合使わない
         	if(beforeMp<USE_MP) return;
-        	var world = player.getWorld();
-        	Vector unitVector = new Vector(player.getLocation().getDirection().getX(), 0, player.getLocation().getDirection().getZ());
-        	unitVector = unitVector.normalize();
-    		var sb =  (Arrow)world.spawnEntity(player.getLocation().add(0, 1, 0), EntityType.ARROW);
-    		//sb.setShooter(player);
-    		sb.setVisualFire(true);
-    		sb.setFireTicks(1000);
-    		sb.setVelocity(player.getLocation().getDirection().normalize().multiply(5));
+        	var sb = getMagicSnowball(player,FIRE_ARROW_BOOK);
+        	sb.setFireTicks(100);
     		AddMagicPoint(player, -USE_MP);
     		e.setCancelled(false);
         	return;
         }
         //持ってる本の名前が赤文字の氷矢の書の場合
-        if(handItemName.equalsIgnoreCase(ChatColor.RED + ICE_ARROW_BOOK))
+        else if(handItemName.equalsIgnoreCase(ChatColor.RED + ICE_ARROW_BOOK))
         {
         	final int USE_MP = 10;
         	Integer beforeMp = GetMagicPointInt(player);
         	//MPが少ない場合使わない
         	if(beforeMp<USE_MP) return;
-        	var world = player.getWorld();
-        	Vector unitVector = new Vector(player.getLocation().getDirection().getX(), 0, player.getLocation().getDirection().getZ());
-        	unitVector = unitVector.normalize();
-    		var sb =  (Arrow)world.spawnEntity(player.getLocation().add(0, 1, 0), EntityType.ARROW);
-    		sb.setColor(Color.BLUE);
-    		sb.setDamage(0);
-    		sb.setKnockbackStrength(0);
-    		sb.setBasePotionData(new PotionData(PotionType.SLOWNESS));
-    		sb.addCustomEffect(new PotionEffect(PotionEffectType.SLOW,100,100), false);
-    		sb.addCustomEffect(new PotionEffect(PotionEffectType.JUMP,100,250), false);
-    		sb.setVelocity(player.getLocation().getDirection().normalize().multiply(5));
+        	var sb = getMagicSnowball(player,ICE_ARROW_BOOK);
     		AddMagicPoint(player, -USE_MP);
         	return;
         }
         //持ってる本の名前が赤文字の「跳躍の書の場合」
-        if(handItemName.equalsIgnoreCase(ChatColor.RED + JUMP_BOOST_BOOK))
+        else if(handItemName.equalsIgnoreCase(ChatColor.RED + JUMP_BOOST_BOOK))
         {
         	final int USE_MP = 30;
         	Integer beforeMp = GetMagicPointInt(player);
@@ -484,10 +543,10 @@ public class Magic
         	return;
         }
         //持ってる本の名前が赤文字の「ペロの書の場合」
-        if(handItemName.equalsIgnoreCase(ChatColor.RED + SUMMON_PERO_BOOK))
+        else if(handItemName.equalsIgnoreCase(ChatColor.RED + SUMMON_PERO_BOOK))
         {
 
-        	final int USE_MP = 100;
+        	final int USE_MP = MAGIC_COST.get(SUMMON_PERO_BOOK);
         	Integer beforeMp = GetMagicPointInt(player);
 
         	//MPが少ない場合使わない
@@ -501,8 +560,47 @@ public class Magic
     		AddMagicPoint(player, -USE_MP);
         	return;
         }
+        //持ってる本の名前が赤文字の「焼き肉の書の場合」
+        else if(handItemName.equalsIgnoreCase(ChatColor.RED + ONIKU_TABETAI_BOOK))
+        {
+
+        	final int USE_MP = MAGIC_COST.get(ONIKU_TABETAI_BOOK);
+        	Integer beforeMp = GetMagicPointInt(player);
+
+        	//MPが少ない場合使わない
+        	if(beforeMp<USE_MP) return;
+
+        	Util.GetFreshSteak(player);
+
+    		AddMagicPoint(player, -USE_MP);
+
+    		return;
+        }
 
 
+
+    }
+
+    /**
+     * 雪玉がプレイヤーでない生きてるエンティティにあたった場合に呼び出される
+     * @param projectileHitEvent
+     */
+    @EventHandler
+    public static void onSnowBallHit(Snowball snowBall,LivingEntity target)
+    {
+    	String sbName = snowBall.getCustomName();
+    	if(sbName.equalsIgnoreCase(FIRE_ARROW_BOOK))
+    	{
+    		target.damage(5);
+    		target.setFireTicks(100);
+    	}
+    	else if(sbName.equalsIgnoreCase(ICE_ARROW_BOOK))
+    	{
+    		target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW,100,100));
+    		target.addPotionEffect(new PotionEffect(PotionEffectType.JUMP,100,250));
+    		//sb.addCustomEffect(new PotionEffect(PotionEffectType.SLOW,100,100), false);
+    		//sb.addCustomEffect(new PotionEffect(PotionEffectType.JUMP,100,250), false);
+    	}
     }
 
     /**
@@ -545,6 +643,10 @@ public class Magic
 		else if(bookName.equalsIgnoreCase(SUMMON_PERO_BOOK))
 		{
 			GetBook(player,SUMMON_PERO_BOOK);
+		}
+		else if(bookName.equalsIgnoreCase(ONIKU_TABETAI_BOOK))
+		{
+			GetBook(player,ONIKU_TABETAI_BOOK);
 		}
 	}
 

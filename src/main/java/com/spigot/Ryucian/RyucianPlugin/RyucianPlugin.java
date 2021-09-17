@@ -19,6 +19,7 @@ import org.bukkit.entity.Creature;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LingeringPotion;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -159,7 +160,27 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent projectileHitEvent)
     {
+
+		Entity eventEntity = projectileHitEvent.getEntity();
+
+		//投擲物にあったのがエンティティでない（ブロックである）なら処理しない
+		if( Objects.isNull(projectileHitEvent.getHitEntity())) return;
+
+		//あたったのがプレイヤーなら処理しない
+		if(projectileHitEvent.getHitEntity() instanceof Player) return;
+		Entity targetEntity = projectileHitEvent.getHitEntity();
+
+		//あたった相手が生きていないならば処理しない
+		if(!(projectileHitEvent.getHitEntity() instanceof LivingEntity)) return;
+		LivingEntity targetLivingEntity = (LivingEntity)targetEntity;
+
+		//投擲物が雪玉でない場合は処理しない
+		if(!(eventEntity instanceof Snowball)) return;
+		Snowball snowball = (Snowball)eventEntity;
+
     	Pero.onProjectileHit(projectileHitEvent);
+
+    	Magic.onSnowBallHit(snowball,targetLivingEntity);
     	//SuperCreekBow.onProjectileHit(projectileHitEvent);
     }
 
