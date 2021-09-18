@@ -80,6 +80,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -481,10 +483,10 @@ public class Magic
     	var sb =  (Snowball)world.spawnEntity(plocation.add(0, 1, 0), EntityType.SNOWBALL);
 		sb.setShooter(player);
     	sb.setCustomName(customName);
-		sb.setVelocity(plocation.getDirection().add(new Vector(0,0.5,0)).normalize());
-		sb.setTicksLived(100);
+		sb.setVelocity(plocation.getDirection().normalize());
+		//sb.setTicksLived(100);
 		sb.setGravity(true);
-		sb.setFallDistance(1000);
+		//sb.setFallDistance(1000);
 		return sb;
 	}
 
@@ -588,11 +590,17 @@ public class Magic
     @EventHandler
     public static void onSnowBallHit(Snowball snowBall,LivingEntity target)
     {
+    	//投擲者がプレイヤーでない場合は処理しない
+    	if(!(snowBall.getShooter() instanceof Player)) return;
+    	var player = (Player)snowBall.getShooter();
+
     	String sbName = snowBall.getCustomName();
     	if(sbName.equalsIgnoreCase(FIRE_ARROW_BOOK))
     	{
-    		target.damage(5);
+    		target.damage(5,player);
     		target.setFireTicks(100);
+    		//var ede = new EntityDamageEvent(player,DamageCause.ENTITY_ATTACK,5);
+    		//target.setLastDamageCause(ede);
     	}
     	else if(sbName.equalsIgnoreCase(ICE_ARROW_BOOK))
     	{
