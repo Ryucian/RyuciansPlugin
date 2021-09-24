@@ -593,6 +593,9 @@ public class Magic
     	//投擲者がプレイヤーでない場合は処理しない
     	if(!(snowBall.getShooter() instanceof Player)) return;
     	var player = (Player)snowBall.getShooter();
+    	
+    	//あたった生物が名前付きのうさぎの場合は処理しない
+    	if((target instanceof Rabbit) && (Objects.isNull(target.getCustomName())==false)) return;
 
     	String sbName = snowBall.getCustomName();
     	if(sbName.equalsIgnoreCase(FIRE_ARROW_BOOK))

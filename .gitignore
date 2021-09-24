@@ -10,3 +10,4 @@ target/RyucianPlugin.jar
 target/RyucianPlugin.jar
 *.class
 *.jar
+*.class

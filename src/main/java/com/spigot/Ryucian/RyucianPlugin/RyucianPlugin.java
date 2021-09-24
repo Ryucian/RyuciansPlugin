@@ -21,6 +21,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
+import org.bukkit.entity.Piglin;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Rabbit;
@@ -30,7 +31,10 @@ import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -179,7 +183,7 @@ public class RyucianPlugin extends JavaPlugin implements Listener
 		Snowball snowball = (Snowball)eventEntity;
 
     	Pero.onProjectileHit(projectileHitEvent);
-    	
+
 
     	Magic.onSnowBallHit(snowball,targetLivingEntity);
     	//SuperCreekBow.onProjectileHit(projectileHitEvent);
@@ -205,7 +209,6 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e)
     {
-
         //クリックした先が空気か普通のブロックでない場合は処理しない
         if (!(e.getAction().equals(Action.RIGHT_CLICK_AIR) || e.getAction().equals(Action.RIGHT_CLICK_BLOCK))) return;
 
@@ -238,6 +241,24 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     public void onPlayerItemConsume(PlayerItemConsumeEvent e)
     {
     	Magic.onPlayerItemConsume(e);
+    }
+
+    /**
+     * 生き物がスポーンしたとき
+     * @param e
+     */
+    @EventHandler
+    public void onCreatureSpawn(CreatureSpawnEvent e)
+    {
+    	var entity = e.getEntity();
+
+    	//スポーンしたやつがピグリンの場合
+    	if(e.getEntityType().equals(EntityType.PIGLIN))
+    	{
+    		//スポーンしたエンティティをピグリン型に変換
+    		var piglin = (Piglin)entity;
+    		piglin.setImmuneToZombification(true);
+    	}
     }
 
     /**
@@ -314,4 +335,27 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	}
     	*/
     }
+
+    /**
+     * 何らかのエンティティがブロックからダメージを受けたとき
+     * 落下・マグマなど
+     * @param e
+     */
+    @EventHandler
+    public static void onEntityDamageByBlocks(EntityDamageByBlockEvent e)
+    {
+    	//ダメージを受けたエンティティを取得する
+    	var entity = e.getEntity();
+
+    	//ダメージを受けたエンティティがプレイヤーでなければ処理しない
+    	if( !(entity instanceof Player) ) return;
+
+    	//ダメージを受けたエンティティをプレイヤー型に変換する
+    	var player = (Player)entity;
+
+    	//ダメージを受けた原因を取得する
+    	var cause = e.getCause();
+   }
+
+
 }
