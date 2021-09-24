@@ -35,6 +35,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -257,8 +258,33 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	{
     		//スポーンしたエンティティをピグリン型に変換
     		var piglin = (Piglin)entity;
+
+    		//ピグリンにゾンビ化への免疫を付与する
     		piglin.setImmuneToZombification(true);
+
     	}
+    }
+
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent e)
+    {
+    	var entity = e.getEntity();
+
+    	//スポーンしたやつがピグリンの場合
+    	if(e.getEntityType().equals(EntityType.PIGLIN))
+    	{
+    		//20%の確率で金塊をドロップ品に追加
+    		if(Util.isLottery(5,2))
+    		{
+    			e.getDrops().add(new ItemStack(Material.GOLD_NUGGET,1));
+    		}
+    		//1%の確率でドロップ品に金インゴットを追加
+    		else if(Util.isLottery(100,50))
+    		{
+        		e.getDrops().add(new ItemStack(Material.GOLD_INGOT,1));
+    		}
+    	}
+
     }
 
     /**

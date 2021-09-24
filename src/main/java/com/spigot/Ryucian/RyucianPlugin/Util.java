@@ -28,6 +28,7 @@ public class Util {
 		return target.toVector().subtract(origin.toVector()).normalize();
 	}
 
+
 	/**
 	 * 抽選を行う
 	 * @param denom 分母（指定した数値分の１の確率であたる）
@@ -35,8 +36,23 @@ public class Util {
 	 */
 	public static Boolean isLottery(int denom)
 	{
+		return isLottery(denom,0);
+	}
+
+	/**
+	 * 抽選を行う
+	 * @param denom 分母（指定した数値分の１の確率であたる）
+	 * @param lottenNum 当選とする番号（denom未満とする）
+	 * @return あたりの場合はtrue、はずれの場合はfalse
+	 */
+	public static Boolean isLottery(int denom,int lottenNum)
+	{
+		//偏りをマイルドにするためにnextDoubleを空打ち
+		var dbl = random.nextDouble();
+
 		int rnd =random.nextInt(denom);
-		return rnd == 0;
+		System.out.println(rnd);
+		return rnd == lottenNum;
 	}
 
 	public static void GetFreshSteak(Player player)
