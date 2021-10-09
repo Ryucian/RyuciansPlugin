@@ -39,13 +39,19 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -198,6 +204,8 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     public void onPlayerInteractEntity(PlayerInteractEntityEvent e)
     {
     	Magic.onPlayerInteractEntity(e);
+    	Shop.onPlayerInteractEntity(e);
+    	return;
     }
 
 
@@ -216,6 +224,7 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	SuperCreekBow.onPlayerInteract(e);
 
     	Magic.onPlayerInteract(e);
+    	test.onPlayerInteract(e);
 
     }
 
@@ -268,6 +277,13 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     @EventHandler
     public void onEntityDeath(EntityDeathEvent e)
     {
+    	//プレイヤーが敵を倒したときの処理
+    	//エンティティを倒したのがプレイヤーでなければ処理しない
+    	if(Objects.isNull(e.getEntity().getKiller())) return;
+
+    	//プレイヤーを取得
+		var player = e.getEntity().getKiller();
+
     	var entity = e.getEntity();
 
     	//スポーンしたやつがピグリンの場合
@@ -283,8 +299,29 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     		{
         		e.getDrops().add(new ItemStack(Material.GOLD_INGOT,1));
     		}
+
+    		//プレイヤーのマナを５０回復させる
+    		Magic.AddMagicPoint(player,50);
+
+    	}
+    	else if(e.getEntityType().equals(EntityType.PILLAGER))
+    	{
+    		//プレイヤーのマナを５０回復させる
+    		Magic.AddMagicPoint(player,50);
     	}
 
+
+
+    }
+
+    /**
+     * エンティティがダメージを受けたとき
+     * @param e
+     */
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent e)
+    {
+    	test.onDamage(e);
     }
 
     /**
@@ -294,9 +331,6 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     @EventHandler
     public void OnPlayerChat(PlayerChatEvent event)
     {
-    	//各種メッセージコマンドを一旦すべて廃止
-    	return;
-    	/*
     	String msg = event.getMessage();
     	Player player = event.getPlayer();
 
@@ -359,7 +393,58 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     		Magic.GetManaGainPotion(player);
     		event.setCancelled(true);
     	}
-    	*/
+    	//各種メッセージコマンドを一旦すべて廃止
+    	return;
+    }
+
+    /**
+     *
+     * @param e
+     */
+    @EventHandler
+    public static void onInventoryClick(InventoryClickEvent e)
+    {
+    	//インベントリクリックしていない場合は処理しない
+    	if( Objects.isNull(e.getClickedInventory()) ) return;
+
+    	//printInventoryClickEventData(e);
+
+    	//インベントリの主がプレイヤーでなければ処理しない
+    	if((e.getWhoClicked() instanceof Player) == false) return;
+    	var player = (Player)e.getWhoClicked();
+
+    	printInventoryClickEventData(e);
+
+    	//クリックしたインベントリ
+    	Shop.onInventoryClick(e, player);
+
+    }
+
+    /**
+     *
+     * @param e
+     */
+    @EventHandler
+    public static void onInventoryClose(InventoryCloseEvent e)
+    {
+    	Shop.onInventoryClose(e);
+    }
+
+    public static void printInventoryClickEventData(InventoryClickEvent e)
+    {
+    	System.out.println("アイテム情報");
+    	System.out.println("getCursor（クリック前のアイテム）:"+e.getCursor().getType().name());
+    	if(Objects.isNull(e.getCurrentItem()))
+    	{
+        	System.out.println("getCurrentItem（クリック後のアイテム）:なし");
+    	}
+    	else
+    	{
+        	System.out.println("getCurrentItem（クリック後のアイテム）:"+e.getCurrentItem().getType().name());
+    	}
+    	System.out.println("インベントリ情報");
+    	System.out.println("getInventory:"+e.getInventory().getType().name());
+    	System.out.println("getClickedInventory:"+e.getClickedInventory().getType().name());
     }
 
     /**
@@ -381,6 +466,7 @@ public class RyucianPlugin extends JavaPlugin implements Listener
 
     	//ダメージを受けた原因を取得する
     	var cause = e.getCause();
+
    }
 
 

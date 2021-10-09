@@ -1,11 +1,15 @@
 package com.spigot.Ryucian.RyucianPlugin;
 
+import java.util.Objects;
 import java.util.Random;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 public class Util {
@@ -49,9 +53,7 @@ public class Util {
 	{
 		//偏りをマイルドにするためにnextDoubleを空打ち
 		var dbl = random.nextDouble();
-
 		int rnd =random.nextInt(denom);
-		System.out.println(rnd);
 		return rnd == lottenNum;
 	}
 
@@ -62,6 +64,29 @@ public class Util {
 		cow.setAI(false);
 		cow.setFireTicks(9999);
 		cow.setGravity(true);
+	}
+
+	/**
+	 * 指定されたアイテム種別と数量に一致するアイテムをインベントリから削除します
+	 * @param inv
+	 * @param amount
+	 * @param materialType
+	 */
+	public static void RemoveItem(Inventory inv,int amount,Material materialType)
+	{
+		ItemStack stackToRemove = null;
+		for (ItemStack stack : inv.getContents())
+		{
+			if(Objects.isNull(stack)) continue;
+
+		    if (stack.getType() == materialType && stack.getAmount() == amount) {
+		        stackToRemove = stack;
+		        break;
+		    }
+		}
+		if (stackToRemove != null) {
+		    inv.remove(stackToRemove);
+		}
 	}
 
 }

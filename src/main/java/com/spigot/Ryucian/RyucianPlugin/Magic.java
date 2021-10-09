@@ -234,6 +234,10 @@ public class Magic
 	    	}
 	    	AddMoney(player,-GACHA_PRICE);
     	}
+    	//どちらにも該当しない場合は処理終了
+    	else {
+    		return;
+    	}
 
     	//最後に実行した時間を設定する
     	onPlayerInteractEntityTime = LocalDateTime.now();
@@ -593,7 +597,7 @@ public class Magic
     	//投擲者がプレイヤーでない場合は処理しない
     	if(!(snowBall.getShooter() instanceof Player)) return;
     	var player = (Player)snowBall.getShooter();
-    	
+
     	//あたった生物が名前付きのうさぎの場合は処理しない
     	if((target instanceof Rabbit) && (Objects.isNull(target.getCustomName())==false)) return;
 
