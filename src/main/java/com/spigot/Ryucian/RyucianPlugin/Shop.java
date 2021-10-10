@@ -12,11 +12,13 @@ import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
 public class Shop
 {
@@ -71,41 +73,43 @@ public class Shop
      */
     public static void onInventoryClick(InventoryClickEvent e,Player player)
     {
-    	System.out.println("Shop.onInventoryClick is Start");
-
-    	//プレイヤーがショッパーを開いていない場合は処理しない
-    	if(!playerInvMap.containsKey(player)) return;
-
     	//プレイヤーが開いているインベントリがショップインベントリでない場合は処理しない
     	if( !e.getView().getTitle().equals(SHOPER_NAME)) return;
-    	var shopInv = e.getInventory();
 
     	//クリックされたインベントリがプレイヤーの場合は処理しない
     	if(e.getClickedInventory().getType().equals(InventoryType.PLAYER)) return;
 
-    	//クリック前のアイテムを取得
+    	//置く前（カーソル）のアイテムを取得
     	var itemStack = e.getCursor();
 
     	//クリック前のアイテムがなければ処理しない
-    	if(Objects.isNull(itemStack)) return;
+    	if(Objects.isNull(itemStack))
+    	{
+    		return;
+    	}
+
+    	//左クリックでなければ処理しない
+    	if(e.getClick() != ClickType.LEFT)
+    	{
+    		return;
+    	}
 
     	//クリック前のアイテムが価格表に存在しないの場合は処理しない
     	if( !priceMap.containsKey(itemStack.getType()) )
     	{
-    		e.setCancelled(true);
     		return;
     	}
+
     	var price = priceMap.get(itemStack.getType())*itemStack.getAmount();
 
     	//プレイヤーにおかねをあげる
     	Magic.AddMoney(player, price);
 
-    	//ショップの中のアイテムを消す
-    	//なぜか見た目上消せないため断念
-    	//Util.RemoveItem(shopInv,itemStack.getAmount(),itemStack.getType());
-
     	//買取メッセージを出す
-    	player.sendMessage(SHOPER_NAME+"が"+itemStack.getItemMeta().getLocalizedName()+itemStack.getAmount()+"を"+price+"$で買い取りました。");
+    	player.sendMessage(SHOPER_NAME+"が"+itemStack.getType()+"("+itemStack.getAmount()+"個)を"+price+"$で買い取りました。");
+
+    	//カーソルのアイテムを消す
+    	e.getWhoClicked().setItemOnCursor(new ItemStack(Material.AIR));
 
     }
 

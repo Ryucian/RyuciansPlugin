@@ -413,7 +413,7 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	if((e.getWhoClicked() instanceof Player) == false) return;
     	var player = (Player)e.getWhoClicked();
 
-    	printInventoryClickEventData(e);
+    	//printInventoryClickEventData(e);
 
     	//クリックしたインベントリ
     	Shop.onInventoryClick(e, player);
