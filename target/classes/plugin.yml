@@ -27,5 +27,24 @@ commands:
     permission: RyucianPlugin.GetBook
     permission-message: You don't have <permission>
     default: op
+  CherryDash:
+    usage: /CherryDash 
+    description: test
+    permission: RyucianPlugin.CherryDash
+    permission-message: You don't have <permission>
+    default: op
+  CherryJump:
+    usage: /CherryJump 
+    description: test
+    permission: RyucianPlugin.CherryJump
+    permission-message: You don't have <permission>
+    default: op
+  SpawnTrader1:
+    usage: /SpawnTrader1 
+    description: test
+    permission: RyucianPlugin.SpawnTrader1
+    permission-message: You don't have <permission>
+    default: op
+ 
  
  
