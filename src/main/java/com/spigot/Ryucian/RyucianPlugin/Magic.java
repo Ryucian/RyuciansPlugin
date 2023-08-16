@@ -1,47 +1,26 @@
 package com.spigot.Ryucian.RyucianPlugin;
 
-import java.io.File;
-import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import com.earth2me.essentials.Essentials;
-import com.earth2me.essentials.EssentialsUserConf;
-import com.earth2me.essentials.User;
-import com.earth2me.essentials.UserData;
-import net.ess3.api.MaxMoneyException;
-import com.earth2me.essentials.storage.*;
-
-import net.ess3.api.MaxMoneyException;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Color;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
@@ -49,55 +28,10 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.Vector;
 
-import java.math.BigDecimal;
-import java.util.Objects;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.data.AnaloguePowerable;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Cat;
-import org.bukkit.entity.Cow;
-import org.bukkit.entity.Creature;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Rabbit;
-import org.bukkit.entity.Snowball;
-import org.bukkit.entity.SpectralArrow;
-import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.util.Vector;
 
 
 public class Magic
@@ -124,14 +58,7 @@ public class Magic
     	put(ONIKU_TABETAI_BOOK,300);
     }};
 
-	private static Essentials ess;
-
 	private static LocalDateTime onPlayerInteractEntityTime = LocalDateTime.now();
-
-	static
-	{
-		ess = (Essentials)Bukkit.getPluginManager().getPlugin("Essentials");
-	}
 
 	/**
 	 * ユーザのお金を加算する
@@ -140,28 +67,16 @@ public class Magic
 	 */
 	public static void AddMoney(Player player,long money)
 	{
-		var user = ess.getUser(player);
-		var nowMoney = user.getMoney();
-		try
-		{
-			user.setMoney(nowMoney.add(BigDecimal.valueOf(money)) );
-			user.save();
-		}
-		catch (MaxMoneyException e)
-		{
-			e.printStackTrace();
-		}
 	}
 
 	/**
-	 * ユーザのお金を加算する
-	 * @param player
-	 * @param money 加算するお金（お金を引く場合はマイナスを設定）
+	 * ユーザのお金を取得する
+	 * @param player ユーザインスタンス
+	 * @return ユーザの所持金
 	 */
 	public static long GetMoney(Player player)
 	{
-		var user = ess.getUser(player);
-		return user.getMoney().toBigInteger().longValue();
+		return 0;
 	}
 
 
@@ -250,10 +165,6 @@ public class Magic
 	 */
 	public static void SetMagicPoint(Player player,long mp)
 	{
-		UUID uuid = player.getUniqueId();
-		var user = ess.getUser(uuid);
-		user.setConfigProperty(MAGIC_POINT, BigDecimal.valueOf(mp) );
-		user.save();
 	}
 
 
@@ -284,6 +195,7 @@ public class Magic
 	 */
 	public static void AddMagicPoint(Player player,BigDecimal addMp)
 	{
+		/*
 		UUID uuid = player.getUniqueId();
 		var user = ess.getUser(uuid);
 		var confMap = user.getConfigMap();
@@ -307,6 +219,7 @@ public class Magic
 		user.setConfigProperty(MAGIC_POINT, mp );
 		user.save();
 		upsetMpBoard(player);
+		*/
 	}
 
 	/**
@@ -351,10 +264,13 @@ public class Magic
 	 */
 	public static String GetMagicPoint(Player player)
 	{
+		return "9999";
+		/* 
 		UUID uuid = player.getUniqueId();
 		var user = ess.getUser(uuid);
 		var confMap = user.getConfigMap();
 		return confMap.get(MAGIC_POINT).toString();
+		*/
 	}
 
 	/**

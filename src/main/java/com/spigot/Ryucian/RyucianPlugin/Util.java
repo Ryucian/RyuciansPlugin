@@ -67,26 +67,25 @@ public class Util {
 	}
 
 	/**
-	 * 指定されたアイテム種別と数量に一致するアイテムをインベントリから削除します
-	 * @param inv
-	 * @param amount
+	 * 指定されたアイテム種別と数量に一致するアイテムをインベントリから引き去ります
+	 * @param inv インベントリ
+	 * @param amount 数量
 	 * @param materialType
 	 */
-	public static void RemoveItem(Inventory inv,int amount,Material materialType)
+	public static boolean RemoveItem(Inventory inv,int amount,Material materialType)
 	{
-		ItemStack stackToRemove = null;
 		for (ItemStack stack : inv.getContents())
 		{
 			if(Objects.isNull(stack)) continue;
 
-		    if (stack.getType() == materialType && stack.getAmount() == amount) {
-		        stackToRemove = stack;
-		        break;
-		    }
+			if(stack.getType() != materialType) continue;
+
+			if(stack.getAmount()<amount) continue;
+
+			stack.setAmount(stack.getAmount()-amount);
+			return true;
 		}
-		if (stackToRemove != null) {
-		    inv.remove(stackToRemove);
-		}
+		return false;
 	}
 
 }

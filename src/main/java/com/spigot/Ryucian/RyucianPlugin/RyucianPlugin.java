@@ -19,6 +19,7 @@ import org.bukkit.entity.Creature;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LingeringPotion;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Piglin;
@@ -28,6 +29,7 @@ import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -51,6 +53,7 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
@@ -58,6 +61,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import org.bukkit.event.entity.ExplosionPrimeEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.TradeSelectEvent;
 
 public class RyucianPlugin extends JavaPlugin implements Listener
 {
@@ -84,8 +90,40 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	else if(cmd.getName().equalsIgnoreCase("OgyaBow")     ) SuperCreekBow.GetSuperCreekBow(player);
     	else if(cmd.getName().equalsIgnoreCase("SteakTabetai")) Util.GetFreshSteak(player);
     	else if(cmd.getName().equalsIgnoreCase("GetRyucianBook")) Magic.GetBookByCommand(player,args[0]);
-    	return true;
+		else if(cmd.getName().equalsIgnoreCase("CherryDash")) CherryDash.Enable(player);
+		else if(cmd.getName().equalsIgnoreCase("CherryJump")) CherryDash.EnableJump(player);
+		else if(cmd.getName().equalsIgnoreCase("SpawnTrader1")) RyucianVillager.SpawnTrader(player);
+		return true;
 	}
+
+	// /**
+	//  * ブロックが爆発するときに呼び出されるらしい
+	//  * @param e
+	//  */
+	// @EventHandler
+	// public void onBlockExplodeEvent(BlockExplodeEvent e)
+	// {
+	// }
+
+	// /**
+	//  * 爆発が起きる前に呼び出されるイベント？
+	//  * @param e
+	//  */
+	// @EventHandler
+	// public void onExplosionPrime(ExplosionPrimeEvent e)
+	// {
+	// }
+
+	@EventHandler
+	public void onEntityExplode(EntityExplodeEvent e)
+	{
+		var entityType = e.getEntityType();
+		if(entityType == EntityType.CREEPER
+		  || entityType == EntityType.GHAST)
+		{
+			e.blockList().clear();
+		}
+	} 
 
 	/**
 	 * エンティティがエンティティからダメージを受けるとき呼び出される
@@ -111,27 +149,16 @@ public class RyucianPlugin extends JavaPlugin implements Listener
 		}
 	}
 
-	/*
+	/**
+	 * プレイヤーが動く度に発生するイベント
+	 * @param e
+	 */
 	@EventHandler
 	public void onPlayerMove(PlayerMoveEvent e)
 	{
 		Player player = e.getPlayer();
-
-		Rabbit usa3 = Usagi.GetUsa3(player);
-
-		if(Objects.isNull(usa3)) return;
-
-		//プレイヤーとうさぴょんの距離が近い場合は処理しない
-		if(usa3.getLocation().distance(player.getLocation()) < 5) return;
-
-		//うさぴょんがプレイヤーを向く
-		usa3.setRotation(player.getLocation(usa3.getLocation()).getYaw(),usa3.getLocation().getPitch());
-
-		//うさぴょんをプレイヤーに近づける
-		usa3.setVelocity(Util.GetVector2Loc(usa3.getEyeLocation(), player.getLocation()));
-
+		CherryDash.onPlayerMove(player);
 	}
-	*/
 
 	/**
 	 * プレイヤーがエンティティにダメージを与えたとき呼び出される
@@ -205,6 +232,21 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     {
     	Magic.onPlayerInteractEntity(e);
     	Shop.onPlayerInteractEntity(e);
+
+		if(!(e.getRightClicked() instanceof Villager)) return;
+
+		var targetVillager = (Villager) e.getRightClicked();
+
+
+		var recipes = targetVillager.getRecipes();
+        var itemStack = new ItemStack(Material.DIAMOND, 1);
+        
+        var recipe = new MerchantRecipe(itemStack, 1, 999, true, 10, 1, 0, 0);
+
+		recipes.add(recipe);
+
+		targetVillager.setRecipes(recipes);
+
     	return;
     }
 
@@ -285,6 +327,8 @@ public class RyucianPlugin extends JavaPlugin implements Listener
 		var player = e.getEntity().getKiller();
 
     	var entity = e.getEntity();
+		
+		e.getDrops().add(new ItemStack(Material.PINK_PETALS,1));
 
     	//スポーンしたやつがピグリンの場合
     	if(e.getEntityType().equals(EntityType.PIGLIN))
@@ -355,6 +399,10 @@ public class RyucianPlugin extends JavaPlugin implements Listener
     	else if(msg.equalsIgnoreCase("ステーキ食べたい") || msg.equalsIgnoreCase("ステーキたべたい"))
     	{
     		Util.GetFreshSteak(player);
+    	}
+    	else if(msg.equalsIgnoreCase("翠さん助けて"))
+    	{
+    		SuperCreekBow.GetSuperCreekBow(player);
     	}
     	else if(msg.equalsIgnoreCase("マナ確認"))
     	{

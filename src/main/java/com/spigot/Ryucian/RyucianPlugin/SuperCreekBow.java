@@ -1,5 +1,6 @@
 package com.spigot.Ryucian.RyucianPlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,21 +18,31 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
-import  org.bukkit.event.player.*;
+import org.bukkit.event.player.*;
 
 public class SuperCreekBow
 {
+	private static final String BOW_NAME = "水野翠の弓";
+	private static final List<String> BOW_LORE = new ArrayList<String>(){
+		{
+			add("私は天然ではありません");
+		}
+	};
+
+	/**
+	 * 
+	 * @param player
+	 */
 	public static void GetSuperCreekBow(Player player)
 	{
 		//SuperCreekBowを作る
 		ItemStack scBow = new ItemStack(Material.BOW,1);
 	    ItemMeta scBowMeta = scBow.getItemMeta();
-	    scBowMeta.addEnchant(Enchantment.ARROW_FIRE, 10, true);
-	    scBowMeta.addEnchant(Enchantment.ARROW_DAMAGE, 10, true);
-	    scBowMeta.addEnchant(Enchantment.ARROW_KNOCKBACK, 10, true);
+	    scBowMeta.addEnchant(Enchantment.DURABILITY, 3, true);
 	    scBowMeta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
 	    scBowMeta.addEnchant(Enchantment.MENDING, 1, true);
-	    scBowMeta.setDisplayName("SuperCreekBow");
+	    scBowMeta.setDisplayName(BOW_NAME);
+		scBowMeta.setLore(BOW_LORE);
 	    scBow.setItemMeta(scBowMeta);
 
         PlayerInventory inventory = player.getInventory();
@@ -99,7 +110,7 @@ public class SuperCreekBow
         //持っているものが弓でなければ処理しない
         //また持っているものの名前がSuperCreekBowでない場合は処理しない
         if( !(p.getInventory().getItemInMainHand().getType().equals(Material.BOW)) ) return;
-        if( !p.getInventory().getItemInMainHand().getItemMeta().getDisplayName().equalsIgnoreCase("SuperCreekBow") ) return;
+        if( !p.getInventory().getItemInMainHand().getItemMeta().getDisplayName().equalsIgnoreCase(BOW_NAME) ) return;
 
         //矢を持っている場合は処理を終了する
         for(ItemStack itemStack :p.getInventory().getContents())

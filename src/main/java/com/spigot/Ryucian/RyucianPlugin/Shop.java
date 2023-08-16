@@ -1,15 +1,9 @@
 package com.spigot.Ryucian.RyucianPlugin;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.block.Chest;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -48,7 +42,7 @@ public class Shop
 
     	//プレイヤーが右クリックしたエンティティが生きてるエンティティでなければ処理しない
 		if(!(entity instanceof LivingEntity)) return;
-		LivingEntity livingEntity = (LivingEntity)entity;
+		//LivingEntity livingEntity = (LivingEntity)entity;
 
     	//プレイヤーを取得
     	var player = e.getPlayer();
